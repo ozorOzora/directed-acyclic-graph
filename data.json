@@ -1,0 +1,94 @@
+{	"name":"création",
+	"children":[{
+		"name":"Dom1",
+		"children":[{
+			"name":"Cat1",
+			"children": [{
+					"name": "Art1lol"},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			},{
+			"name":"Cat2",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			},{
+			"name":"Cat3",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			}]
+	},{
+		"name":"Dom2",
+		"children":[{
+			"name":"Cat1",
+			"children": [{
+					"name": "Art1lol",
+					"altParents":["Dom1"]
+
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			},{
+			"name":"Cat2",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			},{
+			"name":"Cat3",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			}]
+	},{
+		"name":"Dom3",
+		"children":[{
+			"name":"Cat1",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			},{
+			"name":"Cat2",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			},{
+			"name":"Cat3",
+			"children": [{
+					"name": "Art1"
+				},{
+					"name": "Art2"
+				},{
+					"name": "Art3"
+				}]
+			}]
+	}]
+}
