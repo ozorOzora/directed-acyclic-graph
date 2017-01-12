@@ -1,7 +1,10 @@
 function start(){
 
-	var nodes = viewData.nodes,
-		links = viewData.links;
+	var nodes = modelData.nodes,
+		links = modelData.links;
+
+		console.log(nodes);
+		console.log(links);
 
 	var canvas = document.querySelector("canvas"),
 		context = canvas.getContext("2d"),
@@ -9,13 +12,14 @@ function start(){
 		height = canvas.height;
 
 	var simulation = d3.forceSimulation(nodes)
-		.force("charge", d3.forceManyBody().strength(-200))
-		.force("link", d3.forceLink(links).distance(30).strength(0.1))
+		.force("charge", d3.forceManyBody().strength(function(d){return setByDepth( d.depth, -600, -40, -40)}))
+		.force("link", d3.forceLink(links).distance(function(d){return setByDepth( d.source.depth, 100, 30, 30)}).strength(1))
 		.force("x", d3.forceX())
-		.force("y", d3.forceY())
-		.alphaDecay(0.03)
-		.alpha(1)
+    	.force("y", d3.forceY())
+		.force("collision", d3.forceCollide(30) )
 		.on("tick", ticked);
+
+		for (var i = 0; i < 300; ++i) simulation.tick();
 
 		d3.select(canvas)
 			.on("click", click)
@@ -26,13 +30,27 @@ function start(){
 				.on("drag", dragged)
 				.on("end", dragended));
 
-	function update(){
-		nodes = viewData.nodes;
-		links = viewData.links;
-		console.log(simulation);
+	function setByDepth(depth, value1, value2, value3){
+		switch(depth){
+			case 1:
+				return value1;
+				break;
+			case 2:
+				return value2;
+				break;
+			case 3:
+				return value3;
+				break;
+		}
+	}
 
-		simulation.nodes(nodes).restart()
-			.alpha(1);
+	function update(){
+		/*nodes = modelData.nodes;
+		links = modelData.links;
+
+		simulation.nodes(nodes).restart();*/
+
+		//for (var i = 0; i < 300; ++i) simulation.tick();
 	}
 
 	function ticked() {
@@ -42,17 +60,17 @@ function start(){
 
 		context.beginPath();
 		links.forEach(drawLink);
-		context.lineWidth = 2;
+		context.lineWidth = 1;
 		context.strokeStyle = "#6b75a5";
 		context.stroke();
 
 		context.beginPath();
 		nodes.forEach(drawNode);
-		context.fillStyle = "#ff6666";
-		context.fill();
-		context.lineWidth = 3;
+		context.lineWidth = 10;
 		context.strokeStyle = "#242d5c";
 		context.stroke();
+		context.fillStyle = "#ff6666";
+		context.fill();
 
 		context.restore();
 	}
@@ -90,8 +108,8 @@ function start(){
 	}
 
 	function drawNode(d) {
-		context.moveTo(d.x + 5, d.y);
-		context.arc(d.x, d.y, 5, 0, 2 * Math.PI);
+		context.moveTo(d.x + 4, d.y);
+		context.arc(d.x, d.y, 4, 0, 2 * Math.PI);
 
 		var text = d.name, txtHeight = 14;
 		context.font = txtHeight + "px Verdana";
@@ -101,9 +119,9 @@ function start(){
 			Y = d.y +25;
 
 		context.fillStyle = "#242d5c";
-		context.fillRect(X, Y-txtHeight+5, txtWidth, txtHeight-5);
+		context.fillRect(X, Y-txtHeight, txtWidth, txtHeight+5);
 
-		context.fillStyle = "#a3aacc";
+		context.fillStyle = "#ff6666";
 		context.fillText(text, d.x-txtWidth/2, d.y+25);
 	}
 

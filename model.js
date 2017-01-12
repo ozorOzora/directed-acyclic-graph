@@ -4,7 +4,7 @@ var modelData,
 	viewData;
 
 //loads our hierarchy-like data, then executes the callback function
-d3.json("data.json", function(error, data) {
+d3.json("data2.json", function(error, data) {
 	if (error) throw error;
 
 	var nodes = flatten(data),
@@ -23,10 +23,20 @@ d3.json("data.json", function(error, data) {
 function flatten(root){
 	var nodes = [], i = 0;
 
-	function recurse(node){
-		if(node.children) node.children.forEach(recurse);
+	function recurse(node, depth){ // last argument keeps track of the level of depth, in the hierarchy, at which the node is located.
+		if (typeof depth == 'number')
+        depth++;
+    	else
+        depth = 1;
+
+		node.depth = depth;
+
+		if(node.children)
+			node.children.forEach(function(node){recurse(node, depth)});
+
 		node.id = i;
 		++i;
+
 		nodes.push(node);
 	}
 	recurse(root);
