@@ -1,110 +1,83 @@
-function start(){
+window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+										window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
-	var nodes = viewData.nodes,
-		links = viewData.links;
+class View{
+	constructor(model){
+		this._model = model;
 
-	var canvas = document.querySelector("canvas"),
-		context = canvas.getContext("2d"),
-		width = canvas.width,
-		height = canvas.height;
+		this._model.nodesAdded.attach( this.reheat.bind(this) );
+		this._model.linksAdded.attach( this.reheat.bind(this) );
 
-	var simulation = d3.forceSimulation(nodes)
-		.force("charge", d3.forceManyBody().strength(-200))
-		.force("link", d3.forceLink(links).distance(30).strength(0.1))
-		.force("x", d3.forceX())
-		.force("y", d3.forceY())
-		.alphaDecay(0.03)
-		.alpha(1)
-		.on("tick", ticked);
+		this.width = window.innerWidth;
+		this.height = window.innerHeight;
 
-		d3.select(canvas)
-			.on("click", click)
-			.call(d3.drag()
-				.container(canvas)
-				.subject(getSubject)
-				.on("start", dragstarted)
-				.on("drag", dragged)
-				.on("end", dragended));
+		this.nodeRadius =6;
 
-	function update(){
-		nodes = viewData.nodes;
-		links = viewData.links;
-		console.log(simulation);
+		this.canvas = document.querySelector("canvas"),
+		this.context = this.canvas.getContext("2d");
 
-		simulation.nodes(nodes).restart()
-			.alpha(1);
 	}
 
-	function ticked() {
-		context.clearRect(0, 0, width, height);
-		context.save();
-		context.translate(width / 2, height / 2);
+	start(){
+		var ratio = window.devicePixelRatio || 1;
 
-		context.beginPath();
-		links.forEach(drawLink);
-		context.lineWidth = 2;
-		context.strokeStyle = "#6b75a5";
-		context.stroke();
+		this.canvas.style.width = this.width+'px',
+		this.canvas.style.height = this.height+'px',
+		this.canvas.width = this.width*ratio,
+		this.canvas.height = this.height*ratio;
 
-		context.beginPath();
-		nodes.forEach(drawNode);
-		context.fillStyle = "#ff6666";
-		context.fill();
-		context.lineWidth = 3;
-		context.strokeStyle = "#242d5c";
-		context.stroke();
+		this.context.scale(ratio,ratio);
+		this.context.translate(this.width / 2, this.height / 2);
 
-		context.restore();
+		this.simulation = d3.forceSimulation(this._model.nodes)
+			.force("charge", d3.forceManyBody().strength( d => this._model.setByDepth( d.depth, -300, -300, -300)))
+			.force("link", d3.forceLink(this._model.links).distance( d => this._model.setByDepth( d.source.depth, 50, 50)).strength(0.5))
+			.force("x", d3.forceX())
+			.force("y", d3.forceY())
+			.force("collision", d3.forceCollide(d => this._model.setByDepth( d.depth, 60, 60, 60)) )
+			.alphaDecay(0.06)
+			.on("tick", this.updateView.bind(this));
+
+		this._model.nodes.forEach(d => d.animNode = new AnimNode(d, this));
+		this._model.links.forEach(d => d.animLink = new AnimLink(d, this));
+
+		for (var i = 0; i < 10; ++i) this.simulation.tick();
 	}
 
-	function click(){
-		var subject = getSubject();
-		addChildrenOfParent(subject);
-		update();
+	reheat(){
+		this.simulation.alpha( 0.05 ).restart();//ALPHA EST PASSE A 0.05
+
+		this._model.links.forEach( d => {
+			if( this._model.selectedLinks.filter( n => d == n ).length == 0) d.animLink.amount = 0 ;
+		});
 	}
 
-	function getSubject() {
-		return simulation.find(d3.event.x - width / 2, d3.event.y - height / 2);
+	updateView(){
+			this.clearCanvas();
+			this.drawLinks();
+			this.drawNodes();
 	}
 
-	function dragstarted() {
-		if (!d3.event.active) simulation.alphaTarget(0.3).alpha(0.1).restart();
-		d3.event.subject.fx = d3.event.subject.x;
-		d3.event.subject.fy = d3.event.subject.y;
+	drawNodes(){ //DRAWNODES A ETE MODIFIE
+		this._model.nodes.forEach( d => d.animNode.drawNode(true));
+		this._model.defaultNodes.forEach( d => d.animNode.drawNode(false));
+		this._model.selectedNodes.forEach( d =>  { d.animNode.drawNode(false); d.animNode.drawText();});
+		this._model.newNodes.forEach( d => d.animNode.drawNode(false));
+
+		if( this._model.exploredNode != null){
+
+			this._model.exploredNode.animNode.drawNode(false);
+			this._model.exploredNode.animNode.drawText();
+		}
 	}
 
-	function dragged() {
-		d3.event.subject.fx = d3.event.x;
-		d3.event.subject.fy = d3.event.y;
+	drawLinks(){
+		this._model.selectedLinks.forEach( d => d.animLink.drawLink() );
+		this._model.newLinks.forEach( d =>  d.animLink.drawLink() );
 	}
 
-	function dragended() {
-		if (!d3.event.active) simulation.alphaTarget(0);
-		d3.event.subject.fx = null;
-		d3.event.subject.fy = null;
-	}
-
-	function drawLink(d) {
-		context.moveTo(d.source.x, d.source.y);
-		context.lineTo(d.target.x, d.target.y);
-	}
-
-	function drawNode(d) {
-		context.moveTo(d.x + 5, d.y);
-		context.arc(d.x, d.y, 5, 0, 2 * Math.PI);
-
-		var text = d.name, txtHeight = 14;
-		context.font = txtHeight + "px Verdana";
-		var txtWidth = context.measureText(text).width,
-			txtHeight = 14,
-			X = d.x - txtWidth/2,
-			Y = d.y +25;
-
-		context.fillStyle = "#242d5c";
-		context.fillRect(X, Y-txtHeight+5, txtWidth, txtHeight-5);
-
-		context.fillStyle = "#a3aacc";
-		context.fillText(text, d.x-txtWidth/2, d.y+25);
+	clearCanvas(){
+		this.context.clearRect(-this.width/2, -this.height/2, this.width, this.height);
 	}
 
 }
